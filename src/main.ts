@@ -1,8 +1,10 @@
 import { AutorController } from "./controllers/AutorController";
 import { ClienteController } from "./controllers/ClienteController";
+import { EmprestimoController } from "./controllers/EmprestimoController";
 import { LivroController } from "./controllers/LivroController";
 import { criarMenuAutores } from "./menus/menuAutores";
 import { criarMenuClientes } from "./menus/menuClientes";
+import { criarMenuEmprestimos } from "./menus/menuEmprestimos";
 import { criarMenuLivros } from "./menus/menuLivros";
 import { criarMenuPrincipal } from "./menus/menuPrincipal";
 import { AutorRepository } from "./repositories/AutorRepository";
@@ -11,13 +13,9 @@ import { EmprestimoRepository } from "./repositories/EmprestimoRepository";
 import { LivroRepository } from "./repositories/LivroRepository";
 import { AutorService } from "./services/AutorService";
 import { ClienteService } from "./services/ClienteService";
+import { EmprestimoService } from "./services/EmprestimoService";
 import { LivroService } from "./services/LivroService";
 import { leitorTerminal } from "./utils/leitorTerminal";
-
-async function moduloEmConstrucao(nomeDoModulo: string): Promise<void> {
-  console.log(`\n🚧 O módulo "${nomeDoModulo}" ainda está em construção.`);
-  await leitorTerminal.aguardarEnter();
-}
 
 async function iniciar(): Promise<void> {
   const autorRepository = new AutorRepository();
@@ -28,20 +26,23 @@ async function iniciar(): Promise<void> {
   const autorService = new AutorService(autorRepository, livroRepository);
   const livroService = new LivroService(livroRepository, autorService, emprestimoRepository);
   const clienteService = new ClienteService(clienteRepository, emprestimoRepository);
+  const emprestimoService = new EmprestimoService(emprestimoRepository, livroService, clienteService);
 
   const autorController = new AutorController(autorService);
   const livroController = new LivroController(livroService, autorService);
   const clienteController = new ClienteController(clienteService);
+  const emprestimoController = new EmprestimoController(emprestimoService, livroService, clienteService);
 
   const menuAutores = criarMenuAutores(autorController);
   const menuLivros = criarMenuLivros(livroController);
   const menuClientes = criarMenuClientes(clienteController);
+  const menuEmprestimos = criarMenuEmprestimos(emprestimoController);
 
   const menuPrincipal = criarMenuPrincipal({
     abrirAutores: () => menuAutores.exibir(),
     abrirLivros: () => menuLivros.exibir(),
     abrirClientes: () => menuClientes.exibir(),
-    abrirEmprestimos: () => moduloEmConstrucao("Empréstimos"),
+    abrirEmprestimos: () => menuEmprestimos.exibir(),
   });
 
   await menuPrincipal.exibir();
