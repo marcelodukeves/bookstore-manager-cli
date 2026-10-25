@@ -184,5 +184,101 @@ SELECT * FROM emprestimos ORDER BY id;
 
 -- =====================================================================
 -- 3. CONSULTAS DOS RELATÓRIOS
+-- Para ver cada relatório separadamente, selecione a consulta
+-- desejada e execute somente a seleção.
 -- =====================================================================
--- (Esta seção será adicionada na Parte 26.)
+
+-- ---------------------------------------------------------------------
+-- 3.1 Livros disponíveis
+-- Livros com pelo menos um exemplar livre para empréstimo, com o autor.
+-- Recursos: INNER JOIN, WHERE, ORDER BY.
+-- ---------------------------------------------------------------------
+SELECT
+    l.id,
+    l.titulo                AS livro,
+    a.nome                  AS autor,
+    l.quantidade_disponivel AS disponiveis,
+    l.quantidade_total      AS total
+FROM livros l
+INNER JOIN autores a ON a.id = l.autor_id
+WHERE l.quantidade_disponivel > 0
+ORDER BY l.titulo;
+
+-- ---------------------------------------------------------------------
+-- 3.2 Livros emprestados
+-- Empréstimos ainda ativos (sem data de devolução), com o livro,
+-- o cliente e a data do empréstimo.
+-- Recursos: INNER JOIN em três tabelas, WHERE, ORDER BY.
+-- ---------------------------------------------------------------------
+SELECT
+    e.id                                       AS emprestimo,
+    l.titulo                                   AS livro,
+    c.nome                                     AS cliente,
+    TO_CHAR(e.data_emprestimo, 'DD/MM/YYYY')   AS data_emprestimo
+FROM emprestimos e
+INNER JOIN livros   l ON l.id = e.livro_id
+INNER JOIN clientes c ON c.id = e.cliente_id
+WHERE e.data_devolucao IS NULL
+ORDER BY e.data_emprestimo, e.id;
+
+-- ---------------------------------------------------------------------
+-- 3.3 Livros cadastrados por autor
+-- Quantidade de livros e de exemplares de cada autor. O LEFT JOIN
+-- mantém na lista os autores que ainda não possuem livros (total 0).
+-- Recursos: LEFT JOIN, GROUP BY, COUNT, SUM, COALESCE, ORDER BY.
+-- ---------------------------------------------------------------------
+SELECT
+    a.id,
+    a.nome                                AS autor,
+    COUNT(l.id)                           AS total_livros,
+    COALESCE(SUM(l.quantidade_total), 0)  AS total_exemplares
+FROM autores a
+LEFT JOIN livros l ON l.autor_id = a.id
+GROUP BY a.id, a.nome
+ORDER BY total_livros DESC, a.nome;
+
+-- ---------------------------------------------------------------------
+-- 3.4 Quantidade de empréstimos por livro
+-- Total de empréstimos já realizados de cada livro (ativos e
+-- devolvidos). O LEFT JOIN mantém os livros nunca emprestados (total 0).
+-- Recursos: LEFT JOIN, GROUP BY, COUNT, ORDER BY.
+-- ---------------------------------------------------------------------
+SELECT
+    l.id,
+    l.titulo         AS livro,
+    COUNT(e.id)      AS total_emprestimos
+FROM livros l
+LEFT JOIN emprestimos e ON e.livro_id = l.id
+GROUP BY l.id, l.titulo
+ORDER BY total_emprestimos DESC, l.titulo;
+
+-- ---------------------------------------------------------------------
+-- 3.5 Clientes com empréstimos ativos
+-- Clientes que estão com pelo menos um livro, e quantos livros cada um
+-- tem em mãos.
+-- Recursos: INNER JOIN, WHERE, GROUP BY, COUNT, ORDER BY.
+-- ---------------------------------------------------------------------
+SELECT
+    c.id,
+    c.nome          AS cliente,
+    c.email,
+    COUNT(e.id)     AS emprestimos_ativos
+FROM clientes c
+INNER JOIN emprestimos e ON e.cliente_id = c.id
+WHERE e.data_devolucao IS NULL
+GROUP BY c.id, c.nome, c.email
+ORDER BY emprestimos_ativos DESC, c.nome;
+
+-- ---------------------------------------------------------------------
+-- 3.6 Extra: os 3 livros mais emprestados
+-- Ranking dos livros com mais empréstimos, limitado a três linhas.
+-- Recursos: INNER JOIN, GROUP BY, COUNT, ORDER BY, LIMIT.
+-- ---------------------------------------------------------------------
+SELECT
+    l.titulo         AS livro,
+    COUNT(e.id)      AS total_emprestimos
+FROM livros l
+INNER JOIN emprestimos e ON e.livro_id = l.id
+GROUP BY l.id, l.titulo
+ORDER BY total_emprestimos DESC, l.titulo
+LIMIT 3;
