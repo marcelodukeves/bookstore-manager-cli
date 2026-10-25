@@ -1,11 +1,15 @@
 import { Autor, DadosNovoAutor } from "../models/Autor";
 import { AutorRepository } from "../repositories/AutorRepository";
+import { LivroRepository } from "../repositories/LivroRepository";
 import { ErroDeNegocio } from "../utils/ErroDeNegocio";
 import { validarTextoObrigatorio } from "../utils/validacoes";
 
 /** Regras de negócio do módulo de autores. */
 export class AutorService {
-  constructor(private readonly autorRepository: AutorRepository) {}
+  constructor(
+    private readonly autorRepository: AutorRepository,
+    private readonly livroRepository: LivroRepository
+  ) {}
 
   async cadastrar(dados: DadosNovoAutor): Promise<Autor> {
     const dadosValidados = this.validarDados(dados);
@@ -37,8 +41,17 @@ export class AutorService {
     return autor;
   }
 
+  /** Remove o autor, desde que ele não possua livros cadastrados (RF13). */
   async remover(id: number): Promise<void> {
-    await this.buscarPorId(id);
+    const autor = await this.buscarPorId(id);
+    const livrosDoAutor = await this.livroRepository.listarPorAutor(id);
+
+    if (livrosDoAutor.length > 0) {
+      throw new ErroDeNegocio(
+        `Não é possível remover "${autor.nome}": o autor possui ${livrosDoAutor.length} livro(s) cadastrado(s).`
+      );
+    }
+
     await this.autorRepository.remover(id);
   }
 
