@@ -2,6 +2,7 @@ import { AutorController } from "./controllers/AutorController";
 import { ClienteController } from "./controllers/ClienteController";
 import { EmprestimoController } from "./controllers/EmprestimoController";
 import { LivroController } from "./controllers/LivroController";
+import { carregarDadosIniciais } from "./data/seed";
 import { criarMenuAutores } from "./menus/menuAutores";
 import { criarMenuClientes } from "./menus/menuClientes";
 import { criarMenuEmprestimos } from "./menus/menuEmprestimos";
@@ -17,11 +18,14 @@ import { EmprestimoService } from "./services/EmprestimoService";
 import { LivroService } from "./services/LivroService";
 import { leitorTerminal } from "./utils/leitorTerminal";
 
+/** Ponto de entrada: monta as camadas, carrega o seed e inicia o menu principal. */
 async function iniciar(): Promise<void> {
   const autorRepository = new AutorRepository();
   const livroRepository = new LivroRepository();
   const clienteRepository = new ClienteRepository();
   const emprestimoRepository = new EmprestimoRepository();
+
+  await carregarDadosIniciais({ autorRepository, livroRepository, clienteRepository, emprestimoRepository });
 
   const autorService = new AutorService(autorRepository, livroRepository);
   const livroService = new LivroService(livroRepository, autorService, emprestimoRepository);
@@ -45,10 +49,15 @@ async function iniciar(): Promise<void> {
     abrirEmprestimos: () => menuEmprestimos.exibir(),
   });
 
+  console.log("\n📚 BookStore Manager CLI iniciado! Dados iniciais carregados.");
   await menuPrincipal.exibir();
 
   console.log("\n👋 Aplicação encerrada. Até logo!");
   leitorTerminal.fechar();
 }
 
-iniciar();
+iniciar().catch((erro) => {
+  console.error("❌ Erro fatal ao iniciar a aplicação:", erro);
+  leitorTerminal.fechar();
+  process.exit(1);
+});
