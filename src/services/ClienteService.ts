@@ -1,11 +1,15 @@
 import { Cliente, DadosNovoCliente } from "../models/Cliente";
 import { ClienteRepository } from "../repositories/ClienteRepository";
+import { EmprestimoRepository } from "../repositories/EmprestimoRepository";
 import { ErroDeNegocio } from "../utils/ErroDeNegocio";
 import { validarEmail, validarTextoObrigatorio } from "../utils/validacoes";
 
 /** Regras de negócio do módulo de clientes. */
 export class ClienteService {
-  constructor(private readonly clienteRepository: ClienteRepository) {}
+  constructor(
+    private readonly clienteRepository: ClienteRepository,
+    private readonly emprestimoRepository: EmprestimoRepository
+  ) {}
 
   async cadastrar(dados: DadosNovoCliente): Promise<Cliente> {
     const dadosValidados = this.validarDados(dados);
@@ -38,8 +42,17 @@ export class ClienteService {
     return cliente;
   }
 
+  /** Remove o cliente, desde que ele não tenha empréstimos registrados (RF13). */
   async remover(id: number): Promise<void> {
-    await this.buscarPorId(id);
+    const cliente = await this.buscarPorId(id);
+    const emprestimosDoCliente = await this.emprestimoRepository.listarPorCliente(id);
+
+    if (emprestimosDoCliente.length > 0) {
+      throw new ErroDeNegocio(
+        `Não é possível remover "${cliente.nome}": o cliente possui ${emprestimosDoCliente.length} empréstimo(s) registrado(s).`
+      );
+    }
+
     await this.clienteRepository.remover(id);
   }
 

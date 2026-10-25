@@ -7,6 +7,7 @@ import { criarMenuLivros } from "./menus/menuLivros";
 import { criarMenuPrincipal } from "./menus/menuPrincipal";
 import { AutorRepository } from "./repositories/AutorRepository";
 import { ClienteRepository } from "./repositories/ClienteRepository";
+import { EmprestimoRepository } from "./repositories/EmprestimoRepository";
 import { LivroRepository } from "./repositories/LivroRepository";
 import { AutorService } from "./services/AutorService";
 import { ClienteService } from "./services/ClienteService";
@@ -22,10 +23,11 @@ async function iniciar(): Promise<void> {
   const autorRepository = new AutorRepository();
   const livroRepository = new LivroRepository();
   const clienteRepository = new ClienteRepository();
+  const emprestimoRepository = new EmprestimoRepository();
 
   const autorService = new AutorService(autorRepository, livroRepository);
-  const livroService = new LivroService(livroRepository, autorService);
-  const clienteService = new ClienteService(clienteRepository);
+  const livroService = new LivroService(livroRepository, autorService, emprestimoRepository);
+  const clienteService = new ClienteService(clienteRepository, emprestimoRepository);
 
   const autorController = new AutorController(autorService);
   const livroController = new LivroController(livroService, autorService);
