@@ -1,0 +1,34 @@
+Table autores {
+  id serial [pk]
+  nome varchar(100) [not null, unique]
+  nacionalidade varchar(50) [not null]
+}
+
+Table livros {
+  id serial [pk]
+  titulo varchar(150) [not null]
+  isbn varchar(20) [not null, unique]
+  ano_publicacao integer [not null]
+  autor_id integer [not null]
+  quantidade_total integer [not null]
+  quantidade_disponivel integer [not null]
+}
+
+Table clientes {
+  id serial [pk]
+  nome varchar(100) [not null]
+  email varchar(120) [not null, unique]
+  telefone varchar(20) [not null]
+}
+
+Table emprestimos {
+  id serial [pk]
+  livro_id integer [not null]
+  cliente_id integer [not null]
+  data_emprestimo date [not null, default: `CURRENT_DATE`]
+  data_devolucao date [note: 'Nulo significa empréstimo ativo']
+}
+
+Ref: livros.autor_id > autores.id
+Ref: emprestimos.livro_id > livros.id
+Ref: emprestimos.cliente_id > clientes.id
