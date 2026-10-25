@@ -1,4 +1,5 @@
 import { DadosNovoLivro, Livro } from "../models/Livro";
+import { EmprestimoRepository } from "../repositories/EmprestimoRepository";
 import { LivroRepository } from "../repositories/LivroRepository";
 import { ErroDeNegocio } from "../utils/ErroDeNegocio";
 import {
@@ -12,7 +13,8 @@ import { AutorService } from "./AutorService";
 export class LivroService {
   constructor(
     private readonly livroRepository: LivroRepository,
-    private readonly autorService: AutorService
+    private readonly autorService: AutorService,
+    private readonly emprestimoRepository: EmprestimoRepository
   ) {}
 
   async cadastrar(dados: DadosNovoLivro): Promise<Livro> {
@@ -59,9 +61,40 @@ export class LivroService {
     return livro;
   }
 
+  /** Remove o livro, desde que ele não tenha empréstimos registrados (RF13). */
   async remover(id: number): Promise<void> {
-    await this.buscarPorId(id);
+    const livro = await this.buscarPorId(id);
+    const emprestimosDoLivro = await this.emprestimoRepository.listarPorLivro(id);
+
+    if (emprestimosDoLivro.length > 0) {
+      throw new ErroDeNegocio(
+        `Não é possível remover "${livro.titulo}": o livro possui ${emprestimosDoLivro.length} empréstimo(s) registrado(s).`
+      );
+    }
+
     await this.livroRepository.remover(id);
+  }
+
+  /** Retira um exemplar do estoque disponível. Lança erro se não houver nenhum (RF10 e RF13). */
+  async reservarExemplar(id: number): Promise<Livro> {
+    const livro = await this.buscarPorId(id);
+    if (!livro.estaDisponivel()) {
+      throw new ErroDeNegocio(`O livro "${livro.titulo}" não possui exemplares disponíveis no momento.`);
+    }
+
+    livro.quantidadeDisponivel--;
+    await this.livroRepository.atualizar(livro);
+    return livro;
+  }
+
+  /** Devolve um exemplar ao estoque disponível (RF11). */
+  async reporExemplar(id: number): Promise<Livro> {
+    const livro = await this.buscarPorId(id);
+    if (livro.quantidadeDisponivel < livro.quantidadeTotal) {
+      livro.quantidadeDisponivel++;
+      await this.livroRepository.atualizar(livro);
+    }
+    return livro;
   }
 
   /** Valida os campos e devolve os dados já limpos. */
