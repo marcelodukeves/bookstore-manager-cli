@@ -299,7 +299,7 @@ Escolha uma opção:
 3. Informe o ID do livro e o ID do cliente.
 
 ```
-✅ Empréstimo registrado: [7] Livro ID: 2 | Cliente ID: 1 | Empréstimo: 26/10/2026 | Ativo
+✅ Empréstimo registrado: [7] Livro ID: 2 | Cliente ID: 1 | Empréstimo: 27/10/2026 | Ativo
 ```
 
 ### Tentar emprestar um livro sem exemplares
@@ -355,4 +355,4 @@ Acompanhe o planejamento e a evolução das tarefas no quadro do projeto: [Kanba
 
 ## 🎥 Vídeo de apresentação
 
-_O link do vídeo será adicionado aqui após a gravação._
+[Assistir ao vídeo de apresentação no YouTube](https://www.youtube.com/watch?v=EwZHVL3fM54)
